@@ -1,0 +1,86 @@
+# The GitLab Server URL (with protocol) that want to register the runner against
+# ref: https://docs.gitlab.com/runner/commands/README.html#gitlab-runner-register
+#
+gitlabUrl:
+
+# The Registration Token for adding new runners to the GitLab Server. This must
+# be retrieved from your GitLab instance.
+# ref: https://docs.gitlab.com/ce/ci/runners/README.html
+#
+runnerRegistrationToken: 
+
+# For RBAC support:
+rbac:
+  create: true
+
+# run the runner itself on the build-default nodepool
+nodeSelector: 
+  cloud.google.com/gke-nodepool: build-default 
+
+# resources section for the runner itself
+resources: 
+  limits:
+    memory: 256Mi
+    cpu: 250m
+  requests:
+    memory: 256Mi
+    cpu: 250m
+
+unregisterRunners: true
+
+# allow untagged jobs
+runUntagged: true
+
+# Run all containers with the privileged flag enabled
+# This will allow the docker:dind image to run if you need to run Docker
+# commands. Please read the docs before turning this on:
+# ref: https://docs.gitlab.com/runner/executors/kubernetes.html#using-dockerdind
+runners:
+  privileged: true
+#  tags: gke_standard_c2 # uncomment if you want to tag jobs this runner executes, otherwise run untagged
+  config: |
+    [[runners]]
+      [runners.kubernetes]
+        image = "ubuntu:16.04"
+        poll_timeout = 300
+        # set defaults and max overwrite requests and limits
+        # N.B. We do most of our work in the DinD service.
+        cpu_limit = "1"
+        cpu_limit_overwrite_max_allowed = "8"
+        cpu_request = "1"
+        cpu_request_overwrite_max_allowed = "8"
+
+        helper_cpu_limit = "500m"
+        helper_cpu_limit_overwrite_max_allowed = "8"
+        helper_cpu_request = "500m"
+        helper_cpu_request_overwrite_max_allowed = "8"
+
+        service_cpu_limit = "1"
+        service_cpu_limit_overwrite_max_allowed = "8"
+        service_cpu_request = "1"
+        service_cpu_request_overwrite_max_allowed = "8"
+
+        memory_limit = "512Mi"
+        memory_limit_overwrite_max_allowed = "16Gi"
+        memory_request = "512Mi"
+        memory_request_overwrite_max_allowed = "16Gi"
+
+        helper_memory_limit = "512Mi"
+        helper_memory_limit_overwrite_max_allowed = "16Gi"
+        helper_memory_request = "512Mi"
+        helper_memory_request_overwrite_max_allowed = "16Gi"
+
+        service_memory_limit = "4Gi"
+        service_memory_limit_overwrite_max_allowed = "16Gi"
+        service_memory_request = "4Gi"
+        service_memory_request_overwrite_max_allowed = "16Gi"
+
+        [runners.kubernetes.affinity.node_affinity]
+          [runners.kubernetes.affinity.node_affinity.required_during_scheduling_ignored_during_execution]
+            [[runners.kubernetes.affinity.node_affinity.required_during_scheduling_ignored_during_execution.node_selector_terms]]
+              [[runners.kubernetes.affinity.node_affinity.required_during_scheduling_ignored_during_execution.node_selector_terms.match_expressions]]
+                key = "cloud.google.com/machine-family"
+                operator = "In"
+                values = [
+                  "c2",
+                ]
